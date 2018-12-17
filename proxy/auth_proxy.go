@@ -9,19 +9,19 @@ import (
 )
 
 type ParentProxyConfig struct {
-	host     string
-	port     string
-	username string
-	password string
+	Host     string
+	Port     string
+	Username string
+	Password string
 }
 
 func (c *ParentProxyConfig) URL() (*url.URL, error) {
-	rawURL := fmt.Sprintf("http://%s:%s@%s:%s", c.username, c.password, c.host, c.port)
+	rawURL := fmt.Sprintf("http://%s:%s@%s:%s", c.Username, c.Password, c.Host, c.Port)
 	return url.Parse(rawURL)
 }
 
 type AuthProxyConfig struct {
-	parent ParentProxyConfig
+	Parent ParentProxyConfig
 }
 
 type authProxy struct {
@@ -31,7 +31,7 @@ type authProxy struct {
 }
 
 func NewAuthProxy(config *AuthProxyConfig) (Proxy, error) {
-	proxyURL, err := config.parent.URL()
+	proxyURL, err := config.Parent.URL()
 	if err != nil {
 		return nil, err
 	}
@@ -39,12 +39,12 @@ func NewAuthProxy(config *AuthProxyConfig) (Proxy, error) {
 		Proxy: http.ProxyURL(proxyURL),
 	}
 
-	basicAuthInfo := base64.StdEncoding.EncodeToString([]byte(config.parent.username + ":" + config.parent.password))
+	basicAuthInfo := base64.StdEncoding.EncodeToString([]byte(config.Parent.Username + ":" + config.Parent.Password))
 	authorization := fmt.Sprintf("Basic %s", basicAuthInfo)
 
 	return &authProxy{
 		transport:     transport,
-		parentAddress: config.parent.host + ":" + config.parent.port,
+		parentAddress: config.Parent.Host + ":" + config.Parent.Port,
 		authorization: authorization,
 	}, nil
 }

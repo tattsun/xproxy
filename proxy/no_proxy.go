@@ -9,10 +9,10 @@ type noProxy struct {
 	transport *http.Transport
 }
 
-func NewNoProxy() (Proxy, error) {
+func NewNoProxy() Proxy {
 	return &noProxy{
 		transport: &http.Transport{},
-	}, nil
+	}
 }
 
 func (p *noProxy) HandleHTTP(w http.ResponseWriter, r *http.Request) error {
