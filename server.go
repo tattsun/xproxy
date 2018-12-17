@@ -17,6 +17,7 @@ type Server struct {
 }
 
 type Binding struct {
+	name    string
 	proxy   proxy.Proxy
 	matcher *proxy.Matcher
 }
@@ -93,15 +94,16 @@ func NewServer(host string, port string, config *Config) (*Server, error) {
 		}
 
 		bindings[i] = &Binding{
+			name:    bind.Name,
 			matcher: matcher,
 			proxy:   p,
 		}
 	}
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		log.Print(r.URL.String())
 		for _, binding := range bindings {
-			if binding.matcher.Host(r.Host) {
+			if binding.matcher.Host(r.URL.Hostname()) {
+				log.Printf("[%s] %s", binding.name, r.URL.String())
 				if r.Method == "CONNECT" {
 					binding.proxy.HandleHTTPS(w, r)
 				} else {
@@ -110,11 +112,12 @@ func NewServer(host string, port string, config *Config) (*Server, error) {
 				return
 			}
 
-			addr, err := net.ResolveIPAddr("ip", r.Host)
+			addr, err := net.ResolveIPAddr("ip", r.URL.Hostname())
 			if err != nil {
 				continue
 			}
 			if binding.matcher.IP(addr.IP) {
+				log.Printf("[%s] %s", binding.name, r.URL.String())
 				if r.Method == "CONNECT" {
 					binding.proxy.HandleHTTPS(w, r)
 				} else {
@@ -124,6 +127,7 @@ func NewServer(host string, port string, config *Config) (*Server, error) {
 			}
 		}
 
+		log.Printf("[! NOT MATCHED] %s", r.URL.String())
 		w.WriteHeader(403)
 		fmt.Fprint(w, "binding not found")
 	}
