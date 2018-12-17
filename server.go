@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 
@@ -81,9 +82,9 @@ func NewServer(host string, port string, config *Config) (*Server, error) {
 			ips = make([]string, 0)
 		}
 
-		p, ok := proxies[bind.Proxy]
+		p, ok := proxies[bind.Name]
 		if !ok {
-			return nil, errors.Errorf(`proxy "%s" is not defined`, bind.Proxy)
+			return nil, errors.Errorf(`proxy "%s" is not defined`, bind.Name)
 		}
 
 		matcher, err := proxy.NewMatcher(hosts, ips)
@@ -98,6 +99,7 @@ func NewServer(host string, port string, config *Config) (*Server, error) {
 	}
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
+		log.Print(r.URL.String())
 		for _, binding := range bindings {
 			if binding.matcher.Host(r.Host) {
 				if r.Method == "CONNECT" {

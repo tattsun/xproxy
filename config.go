@@ -18,7 +18,7 @@ type Match struct {
 }
 
 type ProxyBind struct {
-	Proxy   string `yaml:"proxy"`
+	Name    string `yaml:"name"`
 	Match   Match  `yaml:"match"`
 	Default bool   `yaml:"default"`
 }
