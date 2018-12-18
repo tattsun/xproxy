@@ -91,6 +91,7 @@ func (p *authProxy) HandleHTTPS(w http.ResponseWriter, r *http.Request) error {
 	if err := r.Write(parentConn); err != nil {
 		return err
 	}
+
 	go transfer(parentConn, clientConn)
 	go transfer(clientConn, parentConn)
 	return nil

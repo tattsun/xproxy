@@ -7,9 +7,9 @@ import (
 )
 
 type Proxy struct {
-	Name   string            `yaml:"name"`
-	Type   string            `yaml:"type"`
-	Config map[string]string `yaml:"config"`
+	Name   string                 `yaml:"name"`
+	Type   string                 `yaml:"type"`
+	Config map[string]interface{} `yaml:"config"`
 }
 
 type Match struct {

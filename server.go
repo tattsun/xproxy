@@ -22,6 +22,34 @@ type Binding struct {
 	matcher *proxy.Matcher
 }
 
+func getAsString(c map[string]interface{}, key string) (string, bool) {
+	val, ok := c[key]
+	if !ok {
+		return "", false
+	}
+	str, ok := val.(string)
+	return str, ok
+}
+
+func getAsStringList(c map[string]interface{}, key string) ([]string, bool) {
+	val, ok := c[key]
+	if !ok {
+		return []string{}, false
+	}
+	lst, ok := val.([]interface{})
+
+	ret := make([]string, len(lst))
+	for i, itm := range lst {
+		str, ok := itm.(string)
+		if !ok {
+			return []string{}, false
+		}
+		ret[i] = str
+	}
+
+	return ret, ok
+}
+
 func NewServer(host string, port string, config *Config) (*Server, error) {
 	proxies := make(map[string]proxy.Proxy)
 	for _, p := range config.Proxies {
@@ -29,20 +57,35 @@ func NewServer(host string, port string, config *Config) (*Server, error) {
 			return nil, errors.New("proxy name is empty")
 		}
 		switch p.Type {
+		case "load_balancing":
+			proxyList, ok := getAsStringList(p.Config, "proxies")
+			if !ok {
+				return nil, errors.Errorf(`proxy "%s" has not config.proxies`, p.Name)
+			}
+			ps := make([]proxy.Proxy, len(proxyList))
+			for i, proxy := range proxyList {
+				p, ok := proxies[proxy]
+				if !ok {
+					return nil, errors.Errorf(`proxy "%s" not found`, proxy)
+				}
+				ps[i] = p
+			}
+			proxies[p.Name] = proxy.NewLoadBalancingProxy(ps)
+			break
 		case "auth":
-			host, ok := p.Config["host"]
+			host, ok := getAsString(p.Config, "host")
 			if !ok {
 				return nil, errors.Errorf(`proxy "%s" has not config.host`, p.Type)
 			}
-			port, ok := p.Config["port"]
+			port, ok := getAsString(p.Config, "port")
 			if !ok {
 				return nil, errors.Errorf(`proxy "%s" has not config.port`, p.Type)
 			}
-			username, ok := p.Config["username"]
+			username, ok := getAsString(p.Config, "username")
 			if !ok {
 				return nil, errors.Errorf(`proxy "%s" has not config.username`, p.Type)
 			}
-			password, ok := p.Config["password"]
+			password, ok := getAsString(p.Config, "password")
 			if !ok {
 				return nil, errors.Errorf(`proxy "%s" has not config.password`, p.Type)
 			}
@@ -111,7 +154,11 @@ func NewServer(host string, port string, config *Config) (*Server, error) {
 				}
 				return
 			}
+		}
 
+		// Because resolving hostname takes too much time,
+		// it should be executed after hostname matching.
+		for _, binding := range bindings {
 			addr, err := net.ResolveIPAddr("ip", r.URL.Hostname())
 			if err != nil {
 				continue

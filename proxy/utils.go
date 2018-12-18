@@ -14,6 +14,7 @@ func transfer(dest io.WriteCloser, src io.ReadCloser) {
 		}
 	}()
 	if dest != nil && src != nil {
-		io.Copy(dest, src)
+		buf := make([]byte, 1, 1)
+		io.CopyBuffer(dest, src, buf)
 	}
 }

@@ -14,7 +14,7 @@ proxies:
     type: auth
     config:
       host: your-corp-proxy.example.com
-      port: 8080
+      port: '8080'
       username: hoge
       password: fuga
 proxy_binds:
